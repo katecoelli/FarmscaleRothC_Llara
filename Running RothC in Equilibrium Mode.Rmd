@@ -1,0 +1,196 @@
+---
+title: "Running RothC in Equilibrium"
+author: "Kate Coelli"
+date: "28/07/2021"
+output: html_document
+---
+
+This file outlines the process required to run RothC in Equilibrium mode in order to determine starting values of the carbon fractions in order to run RothC in real Time.
+
+It is based on the process outlined in <https://www.bgc-jena.mpg.de/TEE/basics/2015/11/19/RothC/> which uses R package **SoilR**.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparing the information required by the model
+
+### Required libraries 
+```{r libraries, message = FALSE, warning = FALSE}
+library(SoilR)
+library(tidyverse)
+library(knitr)
+
+```
+
+### Required data
+Before this code can be run, the required data must be obtained and tidied
+
+```{r data tidying, eval = FALSE}
+#Tidy this first
+file.edit("soil_data_tidying.R")
+
+#followed by this
+file.edit("Equilibrium_monthly_data.R")
+```
+
+If these files have already been executed, load in the relevant outputs
+
+```{r data, echo = FALSE}
+soil_data<- read.csv("../Processed_Data/soil_data_equil.csv")
+LTA_climate<- read.csv("../Processed_Data/LTA_climate_data.csv")
+kable(soil_data, caption = "Soil Data")
+kable(LTA_climate, caption ="Long term average climate data")
+```
+
+### Other information required by SoilR
+
+Specify the number of years over which to run the simulation - we have selected 500 years here
+
+```{r years}
+years = seq(1/12, 500, by=1/12) #number of years, in monthly steps
+```
+
+In this example we test a range of annual C inputs from 1 to 20 Mg/ha/yr
+
+A function has been set up to allow determination of site specific information in loops further on where required
+
+```{r info}
+specify_site_specific_info<- function(soil_data, location_ID){
+  SOC<-soil_data%>%
+    filter(ID == location_ID)%>%
+    select(SOC)#Soil organic carbon in Mg/ha 
+  
+  clay<-soil_data%>%
+    filter(ID == location_ID)%>%
+    select(Clay) #Percent clay
+  
+  IOM<- soil_data%>%
+    filter(ID == location_ID)%>%
+    select(ROC) #Percent ROC from Jon Gray's map
+    
+  site_data<-cbind(location_ID, SOC, clay, IOM)
+}
+
+soil.thick=30  #Soil thickness (organic layer topsoil), in cm
+Cinputs=seq(1,11,0.1)   #Annual C inputs to soil in Mg/ha/yr 
+
+```
+
+For the initial starting value for the resistant fraction, we use measured ROC from Jon Grays maps of NSW
+
+```{r reference, out.width = "70%", fig.align = "center", echo = FALSE}
+
+include_graphics("rmd_images/Gray_et_al_2019.jpg")
+
+```
+
+
+
+### Calculate the effects of climate on decomposition using soilR functions
+this is calculated for each site and is presented as a long term average
+```{r fW and fT}
+all_sites_xi.frame <- list()
+all_sites_fT.fW_frame<- list()
+for(i in 1:nrow(soil_data)){
+fT=fT.RothC(LTA_climate$LTA_temp) #Temperature effects per month - using the same values across all sites
+site_data<-specify_site_specific_info(soil_data, location_ID = soil_data[i, "ID"])
+fW=fW.RothC(P=(LTA_climate$LTA_rain), E=(LTA_climate$LTA_evap), 
+              S.Thick = soil.thick, pClay = site_data$Clay, 
+              pE = 1.0, bare = FALSE)$b #Moisture effects per month
+fT.fW_frame<- data.frame(Site_id = site_data$location_ID, Month = rep(seq(1,12,1)), Temperature = fT, Water = fW)
+xi.frame=data.frame(years,rep(fT*fW,length.out=length(years)))
+xi.frame$ID=soil_data[i, "ID"]
+all_sites_xi.frame[[i]]<- xi.frame
+all_sites_fT.fW_frame[[i]]<- fT.fW_frame
+}
+
+all_sites_xi.frame<- do.call(rbind, all_sites_xi.frame)
+
+all_sites_fT.fW_frame<- do.call(rbind, all_sites_fT.fW_frame)
+```
+
+
+```{r}
+kable(all_sites_fT.fW_frame, caption = "monthly environmental effects on decomposition")
+
+```
+
+
+## Run the model
+Here, we calculate the fractions on a monthly timestep and then take the average of the last 5 years of the simulation period.
+This is assumed to be in an equilibrium state. 
+This model is run through a number of different cinput options (specified in a previous code chunk).
+
+```{r}
+
+allsites_avge_by_cinputs<-list()
+for(j in 1:nrow(soil_data)){
+  res = data.frame(c_input = NA, DPM=NA, RPM=NA, BIO=NA, HUM=NA, IOM=NA)
+  results<- list()
+  for(i in 1:length(Cinputs)){
+  site_data<-specify_site_specific_info(soil_data, location_ID = soil_data[j, "ID"])
+  xi.frame<- all_sites_xi.frame%>%
+    filter(ID==site_data[1,"location_ID"])
+  Model1<-RothCModel(t=years, C0=c(DPM=0, RPM=0, BIO=0, HUM=0, IOM=site_data[1,"ROC"]),
+                     In=Cinputs[i], clay=site_data[1,"Clay"], xi=xi.frame) #Loads the model
+  tmp=getC(Model1) #calculates stocks for each pool per month
+  tmp=as.data.frame(tmp)
+  lst_5_yr=tmp[(nrow(tmp)-5*12):nrow(tmp),] #selects last 5 years of results
+  lst_5_yr_avge = colMeans(lst_5_yr) #calculates average of each pool for last 5 years
+  res[1] = Cinputs[i]
+  res[2:6] = lst_5_yr_avge
+  res$SOC = sum(res[2:6]) #sum of fractions to calculate "predicted" SOC
+  results[[i]]<-res
+  }
+avge_by_cinputs<- do.call(rbind, results)
+avge_by_cinputs$ID<- site_data$location_ID
+allsites_avge_by_cinputs[[j]]<- avge_by_cinputs
+}
+```
+
+
+## Optimise the model
+Here, the total SOC, determined by the sum of the fractions is compared to the SOC measurement at the site.
+The summed fractions of the cinput which produces the smallest error will be used as the starting fractions to run the model in real time.
+
+```{r}
+all_sites_error<- list()
+for(j in 1:length(allsites_avge_by_cinputs)){
+  tmp<-allsites_avge_by_cinputs[[j]]
+  site_data<- specify_site_specific_info(soil_data, soil_data[j, "ID"])
+  for(i in 1:length(Cinputs)){
+    observed<- site_data["SOC"]
+    predicted<- tmp[i, "SOC"]
+    error<- (observed-predicted)^2
+    tmp[i,"error"]<- error
+    avge_by_cinputs<- tmp
+  }
+all_sites_error[[j]]<-avge_by_cinputs  
+}
+
+```
+
+This code selects the fractions with the minimum error to use at each site
+
+```{r, echo=FALSE}
+all_site_fractions<- list()
+for(j in 1:length(all_sites_error)){
+fractions<- all_sites_error[[j]]%>%
+  filter(error==min(error))
+all_site_fractions[[j]]<- fractions
+}
+
+all_site_fractions_df<- do.call(rbind, all_site_fractions)
+write.csv(all_site_fractions_df, "../Processed_Data/fractions_for_initialisation.csv")
+```
+
+
+The final size of the pools after this 500 year spinup are displayed in the table below
+
+```{r, echo = FALSE}
+kable(all_site_fractions_df, caption = "Oodnadatta - Fractions to initialise real time model and c inputs used to acquire them")
+
+```
+
