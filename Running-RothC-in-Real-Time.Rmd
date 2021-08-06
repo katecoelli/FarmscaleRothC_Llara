@@ -1,7 +1,7 @@
 ---
-title: "Running RothC in Real Time"
+title: "Running RothC in Real Time at L'lara"
 author: "Kate Coelli"
-date: "29/07/2021"
+date: "4/08/2021"
 output: html_document
 ---
 
@@ -18,6 +18,14 @@ library(tidyverse)
 library(knitr)
 ```
 
+### Required functions
+Sabastine's RothC functions
+```{r functions}
+
+source("../../../../Useful_functions/Sabastines_RothC_functions/RothC_functions.R")
+
+```
+
 ### Required data
 Before this code can be run, the required data must be obtained and tidied
 This data has some overlap with the data required to run the model in equilibrium mode, and some differences
@@ -29,20 +37,16 @@ This data has some overlap with the data required to run the model in equilibriu
 #Run this first
 file.edit("Running RothC in Equilibrium Mode.Rmd")
 
-#Tidy this first
-file.edit("soil_data_tidying.R")
-
 #followed by this
-file.edit("Equilibrium_monthly_data.R")
+file.edit("RealTime_monthly_data.R")
 
 ```
 
 If these files have already been executed, load in the relevant outputs
 
 ```{r data, echo = FALSE}
-soil_data<- read.csv("../Processed_Data/soil_data_equil.csv")
+soil_data<- read.csv("../Processed_Data/soil_data_RT.csv") #This includes the SOC fractions derived in the equilibrium run
 Monthly_climate<- read.csv("../Processed_Data/LTA_climate_data.csv")
-initial_fractions<- read.csv("../Processed_Data/fractions_for_initialisation.csv")
 kable(soil_data, caption = "Soil Data")
 kable(LTA_climate, caption ="Long term average climate data")
 ```

@@ -6,6 +6,7 @@
 ### Date: 21/07/2021
 ### Email: kate.coelli@sydney.edu.au
 
+### Update: updated to tidy Llara data 
 
 
 # Soil Data - dataframe which contains the following variables
@@ -31,6 +32,7 @@ GDA94_xy_55 = CRS("+init=epsg:28355")
 GDA94_xy_56 = CRS("+init=epsg:28356")
 
 ### Required Functions
+# These functions can be found in my github repo - https://github.com/katecoelli/Useful_functions
 source("../../../../useful_functions/Soil related functions.R")
 
 ##############################
@@ -39,25 +41,28 @@ source("../../../../useful_functions/Soil related functions.R")
 
 
 ### Farm boundary
-boundary<- readOGR("../../../../Data/Farms/Oodnadatta/boundary/Oodnadatta.shp")
+#boundary<- readOGR("../../../../Data/Farms/Llara/boundary/Llara.shp")
 
 
 ### Soil data
 #read in original data
-soil_data<- read.csv("../../../../Data/Farms/Oodnadatta/soil_data.csv")
-soil_data$DepthMin.cm.<- as.numeric(soil_data$DepthMin.cm.)
-soil_data$DepthMax.cm.<- as.numeric(soil_data$DepthMax.cm.)
+#data has been splined to 0-30cm
+soil_data<- read.csv("../../../../Data/Farms/Llara/Processed_Data/BGINNS_splined_SOC_PSA.csv")#start with this, but there are other points to merge
+soil_data$Depth_Upper<- 0
+soil_data$Depth_Lower<- 30
+
 
 #sample locations
-sample_locations<- SpatialPointsDataFrame(soil_data[1:2], soil_data, proj4string = GDA94_latlong)
-writeOGR(sample_locations, dsn="../Processed_Data/Oodnadatta_locations", layer ="Oodnadatta_locations", driver = "ESRI Shapefile")
+sample_locations<- SpatialPointsDataFrame(soil_data[4:3], soil_data[2], proj4string = GDA94_latlong)
+#check long and lat in right order and referencing system correct using mapview - will not plot in right spot otherwise
+mapview(sample_locations)
+writeOGR(sample_locations, dsn="../Processed_Data/Llara_locations", layer = "Llara_locations_BG", driver =  "ESRI Shapefile")
+
 
 #select relevant variables
 soil_data<- soil_data%>%
-  dplyr::select(Longitude, Latitude, Sample.ID, Field, Sample.Date, DepthMin.cm., DepthMax.cm., Soil.Clay....., Soil.Sand....., S.TOC.16)%>%
-  filter(between(DepthMin.cm., 0, 15))
-
-colnames(soil_data)[6:10]<- c("Upper", "Lower", "Clay", "Sand", "SOC")
+  dplyr::select(Long, Lat, Site_ID, Depth_Upper, Depth_Lower, Clay, Sand, SOC)%>%
+  rename(Upper = Depth_Upper, Lower = Depth_Lower)
 
 
 ##############################
@@ -81,29 +86,17 @@ soil_data$POC<- raster::extract(POC, soil_data[1:2])
 ####### tidy #########
 ######################
 
-#soil depth
-depth = 30 #depth in cm
-
-#Convert from 2 depths to 1 depth 
-soil_data_tidy<-soil_data%>%
-  group_by(Sample.ID, Field)%>%
-  mutate(SOC_0to30= sum(SOC)/2)%>%
-  mutate(sand_0to30= sum(Sand)/2)%>%
-  mutate(clay_0to30= sum(Clay)/2)%>%
-  ungroup()%>%
-  dplyr::select(-Upper, -Lower, -Clay, -Sand, -SOC)%>%
-  rename(SOC=SOC_0to30, Sand = sand_0to30, clay = clay_0to30)%>%
-  unique()
+#data already in 0-30cm depths
 
 #calculate Field Capacity using function
-soil_data_tidy<- soil_data_tidy%>%
-  mutate(FC=FC(Sand,clay))%>%
-  mutate(bucket_size = FC * depth * 10)
+soil_data_tidy<- soil_data%>%
+  mutate(FC=FC(Sand, Clay))%>%
+  mutate(bucket_size = FC * soil.thick * 10)
 
 #calculate BD and convert SOC (%) to stocks (t/ha)
 soil_data_tidy<- soil_data_tidy%>%
-  mutate(BD=bd_glob(SOC, Van_Bemelen_factor, Sand, mid_depth= 15))%>%
-  mutate(SOC=SOC*30*BD) #SOC(%)*BD*depth(cm)
+  mutate(BD=bd_glob(SOC, Van_Bemelen_factor, Sand, mid_depth= soil.thick/2))%>%
+  mutate(SOC=SOC*soil.thick*BD) #SOC(%)*BD*depth(cm)
 
 
 
@@ -111,10 +104,11 @@ soil_data_tidy<- soil_data_tidy%>%
 ####### Final Soil Data df #########
 ####################################
 
-
+#final tidy 
 soil_data_final<- soil_data_tidy%>%
-  mutate(ID=paste0(Field, "_", Sample.ID))%>%
-  dplyr::select(Longitude, Latitude, ID, Sample.Date, everything(), -Sample.ID, -Field, -BD)%>%
+  rename(ID=Site_ID)%>%
+  mutate(Sample.Date = "15/07/2018")%>% #date was just "July" so I've set all dates as mid point in july
+  dplyr::select(Long, Lat, ID, Sample.Date, everything(), -BD)%>%
   mutate(year = substr(Sample.Date, nchar(Sample.Date)-3, nchar(Sample.Date)))
 
 
@@ -155,7 +149,7 @@ fractions<- read.csv("../Processed_Data/fractions_for_initialisation.csv") #this
 
 soil_data_RT<- soil_data_final%>%
   add_column(depth = 30)%>%
-  select(ID, year, SOC, bucket_size, clay)%>%
+  select(ID, year, SOC, bucket_size, Clay)%>%
   full_join(fractions[,c("ID", "RPM", "HUM", "IOM")])%>%
   rename(site_id=ID, TOC = SOC)
   

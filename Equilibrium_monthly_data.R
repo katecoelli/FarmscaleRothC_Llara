@@ -33,8 +33,12 @@ source("../../../../Useful_functions/data_prep_and_params_optimisatn_functions.R
 ## Import polygon of region of interest
 # This could be a farm, catchment, state, country etc
 
-boundary<- readOGR("../../../../Data/Farms/Oodnadatta/boundary/Oodnadatta.shp")
+#L'lara is split into Campey and North L'lara
 
+Campey_boun<- readOGR("../../../../Data/Farms/Llara/boundary/Campey/campey_field_boundaries_poly.shp")
+NthLlara_boun<- readOGR("../../../../Data/Farms/Llara/boundary/North Llara/Llara_field_boundaries_poly.shp")
+
+boundary<- bind(Campey_boun, NthLlara_boun)
 
 # Find centre of region - as farm is fairly small in a climate context we are using one point in the centre of the farm as the climate reference.
 # Please note, if you are using this code for a larger area, you may wish to consider using all the gridded climate data included within your "boundary"
@@ -51,12 +55,12 @@ extract_locations<- SpatialPointsDataFrame(extract_locations, sitename)
 plot(boundary)
 points(extract_locations, pch = 16, col = "blue")
 
-#load in soil data information
+#load in soil data information created for the equilibrium run
 
 soil_data<- read.csv("../Processed_Data/soil_data_equil.csv")
 
 
-sample_date<- as.numeric(substr(soil_data[1, "Sample.Date"])) #Here we assume all sampling dates are the same and just take the first date to determine year of sampling
+sample_date<- as.numeric(substr(soil_data[1, "Sample.Date"], start = nchar(soil_data[1, "Sample.Date"])-3, stop = nchar(soil_data[1, "Sample.Date"]))) #Here we assume all sampling dates are the same and just take the first date to determine year of sampling
 # then we collect 30 years of climate data prior to and including sampling year 
 
 ## Daily Climate Data from SILO

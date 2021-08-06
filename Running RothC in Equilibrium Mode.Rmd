@@ -1,7 +1,7 @@
 ---
-title: "Running RothC in Equilibrium"
+title: "Running RothC in Equilibrium - For Llara"
 author: "Kate Coelli"
-date: "28/07/2021"
+date: "03/08/2021"
 output: html_document
 ---
 
@@ -41,7 +41,7 @@ If these files have already been executed, load in the relevant outputs
 soil_data<- read.csv("../Processed_Data/soil_data_equil.csv")
 LTA_climate<- read.csv("../Processed_Data/LTA_climate_data.csv")
 kable(soil_data, caption = "Soil Data")
-kable(LTA_climate, caption ="Long term average climate data")
+kable(LTA_climate, caption ="Long term average climate data for farm midpoint")
 ```
 
 ### Other information required by SoilR
@@ -173,6 +173,7 @@ all_sites_error[[j]]<-avge_by_cinputs
 ```
 
 This code selects the fractions with the minimum error to use at each site
+*Note: If the errors of the fractions are too high, check the Sum of the fractions is reaching the measured SOC, if not, the Cinputs may not be high enough to reach equilibrium*
 
 ```{r, echo=FALSE}
 all_site_fractions<- list()
@@ -190,7 +191,7 @@ write.csv(all_site_fractions_df, "../Processed_Data/fractions_for_initialisation
 The final size of the pools after this 500 year spinup are displayed in the table below
 
 ```{r, echo = FALSE}
-kable(all_site_fractions_df, caption = "Oodnadatta - Fractions to initialise real time model and c inputs used to acquire them")
+kable(all_site_fractions_df, caption = "Llara - Fractions to initialise real time model and c inputs used to acquire them")
 
 ```
 
