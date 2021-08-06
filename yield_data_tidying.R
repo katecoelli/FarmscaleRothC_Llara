@@ -23,237 +23,300 @@ rm(list = ls())
 library(tidyverse)
 library(purrr)
 library(mapview)
+library(rgdal)
+library(gstat)
 
 GDA94_latlong = CRS("+init=epsg:4283")
 GDA94_xy_55 = CRS("+init=epsg:28355")
 
+WGS84_latlong = CRS("+init=epsg:4326")
+WGS84_xy_55 = CRS("+init=epsg:32755")
 
 ##### Files ######
 
-
-
-#2016
-C2_2016_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2016/C2/wheat_lancer16_mga.txt")
-head(C2_2016_wheat)
-C2_2016_wheat<- C2_2016_wheat%>%
-  select(Longitude, Latitude, yield_t_ha)%>%
-  rename(long = Longitude, lat = Latitude)%>%
-  mutate(year = 2016, crop_type = "wheat")
-
-C3_2016_fieldpea<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2016/C3/fieldpea_16_mga.txt")
-head(C3_2016_fieldpea)
-C3_2016_fieldpea<- C3_2016_fieldpea%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "fieldpea")
-
-C4_5_2016_canola<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2016/C4_5/canola16_mga.txt")
-head(C4_5_2016_canola)
-C4_5_2016_canola<- C4_5_2016_canola%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "canola")
-
-C7_8_2016_fababeans<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2016/C7_8/fababeans_16_mga.txt")
-head(C7_8_2016_fababeans)
-C7_8_2016_fababeans<- C7_8_2016_fababeans%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "fababeans")
-
-L2_2016_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2016/L2/L2_wheat_lancer16_mga.txt")
-head(L2_2016_wheat)
-L2_2016_wheat<- L2_2016_wheat%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "wheat")
-
-L3_2016_canola<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2016/L3/L3_canola16_mga.txt")
-head(L3_2016_canola)
-L3_2016_canola<- L3_2016_canola%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "canola")
-
-L4_2016_chickpea<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2016/L4/L4_chickpea16_mga.txt")
-head(L4_2016_chickpea)
-L4_2016_chickpea<- L4_2016_chickpea%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2016, crop_type = "chickpea")
-
-
-#2017
-C1_2017_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C1/wheat17_mga.txt")
-head(C1_2017_wheat)
-C1_2017_wheat<- C1_2017_wheat%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "wheat")
-
-
-C2_2017_chickpea<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C2/Chickpea17_mga.txt")
-head(C2_2017_chickpea)
-C2_2017_chickpea<- C2_2017_chickpea%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "chickpea")
-
-C3_2017_canola<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C3/canola17_mga.txt")
-head(C3_2017_canola)
-C3_2017_canola<- C3_2017_canola%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "canola")
-
-C4_5_2017_chickpea<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C4_5/chickpea17_mga.txt")
-head(C4_5_2017_chickpea)
-C4_5_2017_chickpea<- C4_5_2017_chickpea%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "chickpea")
-
-C6_2017_chickpea<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C6/sorghum17_mga.txt")
-head(C6_2017_chickpea)
-C6_2017_chickpea<- C6_2017_chickpea%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "chickpea")
-
-
-C7_8_9_2017_canola<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2017/C7_8_9/canola17_mga.txt")
-head(C7_8_9_2017_canola)
-C7_8_9_2017_canola<- C7_8_9_2017_canola%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "canola")
-
-L1_2017_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2017/L1/wheat17_mga.txt")
-head(L1_2017_wheat)#no long lat needs transformation first
-L1_2017_wheat<- SpatialPointsDataFrame(L1_2017_wheat[2:1], L1_2017_wheat, proj4string = GDA94_xy_55)
-L1_2017_wheat<- spTransform(L1_2017_wheat, GDA94_latlong)
-L1_2017_wheat<- cbind(L1_2017_wheat@data, L1_2017_wheat@coords)
-colnames(L1_2017_wheat)[(ncol(L1_2017_wheat)-1):ncol(L1_2017_wheat)]<- c("long", "lat")
-head(L1_2017_wheat)
-L1_2017_wheat<- L1_2017_wheat%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2017, crop_type = "wheat")
-
-
-L3_2017_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2017/L3/L3durum_wheat17_mga.txt")
-head(L3_2017_wheat)
-L3_2017_wheat<- L3_2017_wheat%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "wheat")
-
-
-L4_2017_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2017/L4/wheat17_wgs.txt")
-head(L4_2017_wheat)
-L4_2017_wheat<- L4_2017_wheat%>%
-  select(longitude, latitude, yield_t_ha)%>%
-  rename(long = longitude, lat = latitude)%>%
-  mutate(year = 2017, crop_type = "wheat")
-
-#2018
-L2_2018_cotton<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2018/L2/cotton_mga.txt")
-head(L2_2018_cotton)#no long lat needs transformation first
-L2_2018_cotton<- SpatialPointsDataFrame(L2_2018_cotton[1:2], L2_2018_cotton, proj4string = GDA94_xy_55)
-L2_2018_cotton<- spTransform(L2_2018_cotton, GDA94_latlong)
-L2_2018_cotton<- cbind(L2_2018_cotton@data, L2_2018_cotton@coords)
-head(L2_2018_cotton)
-colnames(L2_2018_cotton)[(ncol(L2_2018_cotton)-1):ncol(L2_2018_cotton)]<- c("long", "lat")
-L2_2018_cotton<- L2_2018_cotton%>%
-  select(long, lat, VRYIELDBAL)%>%
-  rename(yield_t_ha=VRYIELDBAL)%>%
-  mutate(year = 2018, crop_type = "cotton")
-
-#2019
-L1_2019_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2019/L1/wheat_19_mga.txt")
-head(L1_2019_wheat)#no long lat needs transformation first
-L1_2019_wheat<- SpatialPointsDataFrame(L1_2019_wheat[1:2], L1_2019_wheat, proj4string = GDA94_xy_55)
-L1_2019_wheat<- spTransform(L1_2019_wheat, GDA94_latlong)
-L1_2019_wheat<- cbind(L1_2019_wheat@data, L1_2019_wheat@coords)
-head(L1_2019_wheat)
-colnames(L1_2019_wheat)[(ncol(L1_2019_wheat)-1):ncol(L1_2019_wheat)]<- c("long", "lat")
-L1_2019_wheat<- L1_2019_wheat%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2019, crop_type = "wheat")
-
-
-L2_2019_canola<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2019/L2/L2_canola_mga.txt")
-head(L2_2019_canola)#no long lat needs transformation first
-L2_2019_canola<- SpatialPointsDataFrame(L2_2019_canola[1:2], L2_2019_canola, proj4string = GDA94_xy_55)
-L2_2019_canola<- spTransform(L2_2019_canola, GDA94_latlong)
-L2_2019_canola<- cbind(L2_2019_canola@data, L2_2019_canola@coords)
-head(L2_2019_canola)
-colnames(L2_2019_canola)[(ncol(L2_2019_canola)-1):ncol(L2_2019_canola)]<- c("long", "lat")
-L2_2019_canola<- L2_2019_canola%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2019, crop_type = "canola")
-
-
-#2020
-L1_2020_fababeans<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2020/L1/fababeans_20_mga.txt")
-head(L1_2020_fababeans)#no long lat needs transformation first
-L1_2020_fababeans<- SpatialPointsDataFrame(L1_2020_fababeans[1:2], L1_2020_fababeans, proj4string = GDA94_xy_55)
-L1_2020_fababeans<- spTransform(L1_2020_fababeans, GDA94_latlong)
-L1_2020_fababeans<- cbind(L1_2020_fababeans@data, L1_2020_fababeans@coords)
-head(L1_2020_fababeans)
-colnames(L1_2020_fababeans)[(ncol(L1_2020_fababeans)-1):ncol(L1_2020_fababeans)]<- c("long", "lat")
-L1_2020_fababeans<- L1_2020_fababeans%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2020, crop_type = "fababeans")
-
-L2_2020_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2020/L2/wheat20_mga.txt")
-head(L2_2020_wheat)#no long lat needs transformation first
-L2_2020_wheat<- SpatialPointsDataFrame(L2_2020_wheat[1:2], L2_2020_wheat, proj4string = GDA94_xy_55)
-L2_2020_wheat<- spTransform(L2_2020_wheat, GDA94_latlong)
-L2_2020_wheat<- cbind(L2_2020_wheat@data, L2_2020_wheat@coords)
-head(L2_2020_wheat)
-colnames(L2_2020_wheat)[(ncol(L2_2020_wheat)-1):ncol(L2_2020_wheat)]<- c("long", "lat")
-L2_2020_wheat<- L2_2020_wheat%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2020, crop_type = "wheat")
-
-L3_2020_wheat<- read.csv("../../../../Data/Farms/Llara/Yield/North Llara/2020/L3/L3wheat20_mga.txt")
-head(L3_2020_wheat)#no long lat needs transformation first
-L3_2020_wheat<- SpatialPointsDataFrame(L3_2020_wheat[1:2], L3_2020_wheat, proj4string = GDA94_xy_55)
-L3_2020_wheat<- spTransform(L3_2020_wheat, GDA94_latlong)
-L3_2020_wheat<- cbind(L3_2020_wheat@data, L3_2020_wheat@coords)
-head(L3_2020_wheat)
-colnames(L3_2020_wheat)[(ncol(L3_2020_wheat)-1):ncol(L3_2020_wheat)]<- c("long", "lat")
-L3_2020_wheat<- L3_2020_wheat%>%
-  select(long, lat, yield_t_ha)%>%
-  mutate(year = 2020, crop_type = "wheat")
-
-#2021 (different format)
-C6_2021_cotton<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2021/C6/Narrabri_C6_2021_Cotton.csv")
-head(C6_2021_cotton)
-C6_2021_cotton<- C6_2021_cotton%>%
-  select(Longitude, Latitude, Yield.ba.ha.)%>%
-  rename(long = Longitude, lat = Latitude, yield_t_ha = Yield.ba.ha.)%>%
-  mutate(year = 2021, crop_type = "cotton")
-
-C6_2021_cotton_sp<- SpatialPointsDataFrame(C6_2021_cotton[1:2], C6_2021_cotton)
-gridded(C6_2021_cotton_sp)<-TRUE 
-
-C7_8_9_2021_cotton<- read.csv("../../../../Data/Farms/Llara/Yield/Campey/2021/C7_8_9/Narrabri_C7_8_9_2021_Cotton.csv")
-head(C7_8_9_2021_cotton)
-C7_8_9_2021_cotton<- C7_8_9_2021_cotton%>%
-  select(Longitude, Latitude, Yield.ba.ha.)%>%
-  rename(long = Longitude, lat = Latitude, yield_t_ha = Yield.ba.ha.)%>%
-  mutate(year = 2021, crop_type = "cotton")
-
-
+# read in data from Brett - in txt krigged format
 yield_files_krigged<- list.files("../../../../Data/Farms/Llara/Yield", pattern = "_kr", recursive = TRUE)
 
-yield_files_krigged_test<- as.data.frame(yield_files_krigged)
+yield_files_krigged<- as.data.frame(yield_files_krigged)
 
-yield_files_krigged_test<- yield_files_krigged_test%>%
+yield_files_krigged<- yield_files_krigged%>%
   filter(!str_detect(yield_files_krigged, "elev"))%>%
   filter(!str_detect(yield_files_krigged, "moisture"))%>%
-  filter(!str_detect(yield_files_krigged, "protein"))
+  filter(!str_detect(yield_files_krigged, "protein"))%>%
+  filter(!str_detect(yield_files_krigged, "GM"))
+
+yield_files_krigged<- list(yield_files_krigged$yield_files_krigged)
+
+yield_files_krigged<- yield_files_krigged[[1]]
+
+for(i in 1:length(yield_files_krigged)){
+  yield_files_krigged[i]<- paste0("../../../../Data/Farms/Llara/Yield/", yield_files_krigged[i] )
+}
+
+#add extra information for 22 files, including which type of txt separator the columns use
+extra_information<- data.frame(file = seq(1:22), sep = NA, croptype = NA, year = NA)
+
+extra_information$sep<- c(",",
+                                ",",
+                                ",",
+                                ",",
+                                ",",
+                                ",",
+                                ",",
+                                ",",
+                                "",
+                                ",",
+                                ",",
+                                ",",
+                                ",",
+                                "\t",
+                                ",",
+                                ",",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "")
+
+extra_information$year<- c(2016,2016,2016,2016,2017,2017,2017,2017,2017,2017,2016,2016,2016,2017,2017,2017,2018,2019,2019,2020,2020,2020)
+extra_information$croptype<- c("wheat", "fieldpea", "canola", "fababeans", "wheat", "chickpea", "canola", "chickpea", "sorghum", "canola", "wheat",
+                               "canola", "chickpea", "wheat", "wheat", "wheat", "cotton", "wheat", "canola", "fababeans", "wheat", "wheat")
+
+
+# link extra information to dataframes
+yield_dfs<- list()
+yield_dataframes<- for(i in 1:length(yield_files_krigged)){
+  tmp<- read.delim(yield_files_krigged[i], sep = extra_information[i, "sep"])
+  yield_dfs[[i]]<- tmp
+}
+
+
+for(i in 1:length(yield_dfs)){
+  yield_dfs[[i]]["year"]<- rep(extra_information[i, "year"], nrow(yield_dfs[[i]]))
+  yield_dfs[[i]]["croptype"]<- rep(extra_information[i, "croptype"], nrow(yield_dfs[[i]]))
+}
+
+##Tidy##
+#remove additional column in some of the dfs
+#now columns should be:
+  #X (Easting)
+  #Y (Northing)
+  #Predicted
+  #Prediction Error
+  #year
+  #croptype
+
+for(i in (length(yield_dfs)-5):length(yield_dfs)){
+  yield_dfs[[i]]<- yield_dfs[[i]][-1]
+}
+
+yield_dfs[[9]]<- yield_dfs[[9]][-1]
+
+#remove 2017 L1 wheat - some data seems to be missing - ask TOM if he wants to search for it.
+yield_dfs[[14]]<- NULL 
+
+
+#combine to form large dataframe
+yield_large_df<- do.call("rbind", yield_dfs)
+
+
+###################################################################
+######## filter by year to create farm raster for each year #######
+###################################################################
+
+#Note - 2021 raster was already made by mikaela 
+
+yield_Llara_2021_ras<- raster("../../../../Data/Farms/Llara/Yield/Campey/2021/cotton_2021_C6_7_8_9_yield.tif")
+plot(yield_Llara_2021, main = "2021 Yield Llara")
+
+## Filter by year to derive annual dataframes
+
+yield_Llara_2016<- yield_large_df%>%
+  filter(year == 2016)
+yield_Llara_2016<- SpatialPointsDataFrame(yield_Llara_2016[1:2], yield_Llara_2016, proj4string = WGS84_xy_55)
+
+
+yield_Llara_2017<- yield_large_df%>%
+  filter(year == 2017)
+yield_Llara_2017<- SpatialPointsDataFrame(yield_Llara_2017[1:2], yield_Llara_2017, proj4string = WGS84_xy_55)
+
+
+yield_Llara_2018<- yield_large_df%>%
+  filter(year == 2018)
+yield_Llara_2018<- SpatialPointsDataFrame(yield_Llara_2018[1:2], yield_Llara_2018, proj4string = WGS84_xy_55)
+
+
+yield_Llara_2019<- yield_large_df%>%
+  filter(year == 2019)
+yield_Llara_2019<- SpatialPointsDataFrame(yield_Llara_2019[1:2], yield_Llara_2019, proj4string = WGS84_xy_55)
+
+
+yield_Llara_2020<- yield_large_df%>%
+  filter(year == 2020)
+yield_Llara_2020<- SpatialPointsDataFrame(yield_Llara_2020[1:2], yield_Llara_2020, proj4string = WGS84_xy_55)
+
+
+head(yield_Llara_2016)
+
+# This adapts Pat's inverse distance weighting code to have constant coordinate intervals
+
+###########################
+# applicable to all years #
+###########################
+
+## 1.  Buffer the field boundaries 
+# re-project to planar coordinate system
+# Load in boundary for field
+farm = readOGR("../../../../Data/Farms/Llara/boundary/Farm_boundary_new.shp")
+farm@proj4string
+
+## 2.  Create grid
+# load shapefiles
+# create an empty raster within this polygon
+bbox(farm)
+grid_empty = raster(xmn= bbox(farm)[1], ymn= bbox(farm)[2], xmx = bbox(farm)[3], ymx = bbox(farm)[4], 
+                    resolution = 10,
+                    crs = WGS84_xy_55)
+grid_empty[grid_empty] = 0 # set to zero
+# now crop and mask
+grid_empty = crop(grid_empty, farm)
+# Mask the raster to prepare it to delineate the boundaries
+grid_empty = mask(grid_empty, farm)
+# And now convert it to SpatialPixel which is used for kriging
+grid_empty_sp = as(grid_empty, "SpatialPixels")
+plot(grid_empty_sp)
+
+#######################
+##### 2016 raster #####
+#######################
+
+### IDW - new local
+t1 = Sys.time()
+yield_Llara_2016_grid = idw(formula = Predicted ~ 1,
+                       locations = yield_Llara_2016,
+                       newdata = grid_empty_sp,
+                       idp = 1,
+                       nmax = 100,
+                       nmin = 10,
+                       maxdist = 500)
+Sys.time()-t1
+
+# turn into a raster
+yield_Llara_2016_ras = raster(yield_Llara_2016_grid)
+yield_Llara_2016_ras = crop(yield_Llara_2016_ras, farm)
+yield_Llara_2016_ras = mask(yield_Llara_2016_ras, farm)
+plot(yield_Llara_2016_ras, main = "2016 yield Llara")
+
+
+
+#######################
+##### 2017 raster #####
+#######################
+
+### IDW - new local
+t1 = Sys.time()
+yield_Llara_2017_grid = idw(formula = Predicted ~ 1,
+                            locations = yield_Llara_2017,
+                            newdata = grid_empty_sp,
+                            idp = 1,
+                            nmax = 100,
+                            nmin = 10,
+                            maxdist = 500)
+Sys.time()-t1
+
+# turn into a raster
+yield_Llara_2017_ras = raster(yield_Llara_2017_grid)
+yield_Llara_2017_ras = crop(yield_Llara_2017_ras, farm)
+yield_Llara_2017_ras = mask(yield_Llara_2017_ras, farm)
+plot(yield_Llara_2017_ras, main = "2017 yield Llara")
+
+
+#######################
+##### 2018 raster #####
+#######################
+
+### IDW - new local
+t1 = Sys.time()
+yield_Llara_2018_grid = idw(formula = Predicted ~ 1,
+                            locations = yield_Llara_2018,
+                            newdata = grid_empty_sp,
+                            idp = 1,
+                            nmax = 100,
+                            nmin = 10,
+                            maxdist = 500)
+Sys.time()-t1
+
+# turn into a raster
+yield_Llara_2018_ras = raster(yield_Llara_2018_grid)
+yield_Llara_2018_ras = crop(yield_Llara_2018_ras, farm)
+yield_Llara_2018_ras = mask(yield_Llara_2018_ras, farm)
+plot(yield_Llara_2018_ras, main = "2018 yield Llara")
+
+
+
+#######################
+##### 2019 raster #####
+#######################
+
+### IDW - new local
+t1 = Sys.time()
+yield_Llara_2019_grid = idw(formula = Predicted ~ 1,
+                            locations = yield_Llara_2019,
+                            newdata = grid_empty_sp,
+                            idp = 1,
+                            nmax = 100,
+                            nmin = 10,
+                            maxdist = 500)
+Sys.time()-t1
+
+# turn into a raster
+yield_Llara_2019_ras = raster(yield_Llara_2019_grid)
+yield_Llara_2019_ras = crop(yield_Llara_2019_ras, farm)
+yield_Llara_2019_ras = mask(yield_Llara_2019_ras, farm)
+plot(yield_Llara_2019_ras, main = "2019 yield Llara")
+
+
+
+#######################
+##### 2020 raster #####
+#######################
+
+### IDW - new local
+t1 = Sys.time()
+yield_Llara_2020_grid = idw(formula = Predicted ~ 1,
+                            locations = yield_Llara_2020,
+                            newdata = grid_empty_sp,
+                            idp = 1,
+                            nmax = 100,
+                            nmin = 10,
+                            maxdist = 500)
+Sys.time()-t1
+
+# turn into a raster
+yield_Llara_2020_ras = raster(yield_Llara_2020_grid)
+yield_Llara_2020_ras = crop(yield_Llara_2020_ras, farm)
+yield_Llara_2020_ras = mask(yield_Llara_2020_ras, farm)
+plot(yield_Llara_2020_ras, main = "2020 yield Llara")
+
+###################################################################
+######## stack all rasters together #######
+###################################################################
+
+yield_Llara_stack<- stack(yield_Llara_2016_ras, yield_Llara_2017_ras, yield_Llara_2018_ras, yield_Llara_2019_ras, yield_Llara_2020_ras)
+
+writeRaster(yield_Llara_stack[[1]], "../Processed_Data/Yield/yield_Llara_2016.tif")
+writeRaster(yield_Llara_stack[[2]], "../Processed_Data/Yield/yield_Llara_2017.tif")
+writeRaster(yield_Llara_stack[[3]], "../Processed_Data/Yield/yield_Llara_2018.tif")
+writeRaster(yield_Llara_stack[[4]], "../Processed_Data/Yield/yield_Llara_2019.tif")
+writeRaster(yield_Llara_stack[[5]], "../Processed_Data/Yield/yield_Llara_2020.tif")
+
+
+yield_Llara_stack@crs
+yield_Llara_2021_ras@crs
+
+plot(yield_Llara_stack)
+
 
 ######################################################
 #### Join all yields and crops together in big df ####
